@@ -75,7 +75,7 @@ npm install
 npm run dev
 ```
 
-## 🌐 Running the Application
+## Running the Application
 
 1. **Start the Backend** (Terminal 1):
    ```bash
@@ -146,7 +146,7 @@ This project is specifically designed for the Malaysian retail market:
 - **Regulations**: 2026 Mandatory ESG Reporting compliance
 - **Focus Categories**: Poultry, Fresh Produce, Dairy (highest-risk perishables)
 
-## 📈 ESG Compliance
+## ESG Compliance
 
 FreshPredict supports compliance with:
 
@@ -163,5 +163,3 @@ Methane Offset (kg CO₂e) = Food Waste Prevented (kg) × 0.918
 ```
 
 ---
-
-Built with ❤️ for Malaysian SME grocers | Supporting SDG 12.3 | 2026 ESG Compliant
