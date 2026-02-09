@@ -1,8 +1,8 @@
 # FreshPredict - AI Inventory Decision-Support System
 
-An AI-driven inventory management platform for Malaysian SME grocers, designed to reduce food waste, optimize stock levels, and meet 2026 ESG compliance requirements.
+An AI inventory management platform for Malaysian SME grocers, designed to reduce food waste, optimize stock levels, and meet 2026 ESG compliance requirements.
 
-## 🎯 Project Objectives
+## Project Objectives
 
 1. **Forecasting Precision** - 30-50% reduction in MAE using Prophet AI models
 2. **Waste Mitigation** - 20% reduction in expired-on-shelf inventory
@@ -10,7 +10,7 @@ An AI-driven inventory management platform for Malaysian SME grocers, designed t
 4. **User Adoption** - 80% user effectiveness target
 5. **System Performance** - 90% uptime with <5s data processing latency
 
-## 🚀 Features
+## Features
 
 ### Dual-Alert Intelligence
 - **Preparation Alerts**: AI-driven demand spike identification 14 days in advance
@@ -26,7 +26,7 @@ An AI-driven inventory management platform for Malaysian SME grocers, designed t
 - Payday cycle demand patterns
 - Local supplier recommendations
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Backend
 - **FastAPI** - High-performance Python API framework
@@ -38,7 +38,7 @@ An AI-driven inventory management platform for Malaysian SME grocers, designed t
 - **Tailwind CSS 4** - Utility-first CSS framework
 - **TypeScript** - Type-safe JavaScript
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 - Python 3.9+
@@ -91,7 +91,7 @@ npm run dev
    ```
    Dashboard will be available at: http://localhost:3000
 
-## 📊 API Endpoints
+## API Endpoints
 
 | Endpoint | Description |
 |----------|-------------|
@@ -107,7 +107,7 @@ npm run dev
 | `GET /products` | List available products |
 | `POST /inventory/add` | Add new stock with AI insight |
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 fresh-predict/
@@ -137,7 +137,7 @@ fresh-predict/
 └── README.md
 ```
 
-## 🇲🇾 Malaysian Context
+## Malaysian Context
 
 This project is specifically designed for the Malaysian retail market:
 
@@ -155,7 +155,7 @@ FreshPredict supports compliance with:
 - **UN SDG 12.3** - 50% reduction in food waste by 2030
 - **National Low Carbon Cities Framework**
 
-## 🧮 Methane Offset Calculation
+## Methane Offset Calculation
 
 Based on 2026 IPCC standards:
 ```
