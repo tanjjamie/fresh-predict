@@ -1,0 +1,25 @@
+{
+  "total_records": 7272,
+  "date_range": {
+    "start": "2025-01-01",
+    "end": "2026-02-08"
+  },
+  "total_revenue": 2045573.0,
+  "products": 18,
+  "by_category": {
+    "dairy": 672998.5,
+    "poultry": 967782.0,
+    "produce": 404792.5
+  },
+  "festival_sales": {
+    "Chinese New Year": 38634.5
+  },
+  "weekend_vs_weekday": {
+    "weekend_avg": 27.76,
+    "weekday_avg": 22.22
+  },
+  "payday_impact": {
+    "payday_period_avg": 26.39,
+    "non_payday_avg": 22.22
+  }
+}
