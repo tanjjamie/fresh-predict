@@ -1,4 +1,4 @@
-# FreshPredict - AI Inventory Decision-Support System
+# FreshPredict - AI-powered inventory management for Malaysian SME grocers
 
 An AI inventory management platform for Malaysian SME grocers, designed to reduce food waste, optimize stock levels, and meet 2026 ESG compliance requirements.
 
