@@ -1,27 +1,50 @@
 @import "tailwindcss";
 
 :root {
-  --background: #000000;
-  --foreground: #fafafa;
-  --card: #0a0a0a;
-  --card-foreground: #fafafa;
-  --primary: #22c55e;
-  --primary-foreground: #000000;
-  --secondary: #171717;
-  --secondary-foreground: #a1a1aa;
-  --muted: #171717;
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #52525b;
+  --muted: #f4f4f5;
   --muted-foreground: #71717a;
-  --accent: #22c55e;
-  --accent-foreground: #000000;
+  --accent: #10b981;
+  --accent-foreground: #ffffff;
+  --border: #e4e4e7;
+  --ring: #10b981;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --primary: #10b981;
+  --primary-foreground: #09090b;
+  --secondary: #27272a;
+  --secondary-foreground: #a1a1aa;
+  --muted: #27272a;
+  --muted-foreground: #71717a;
+  --accent: #10b981;
+  --accent-foreground: #09090b;
   --border: #27272a;
-  --ring: #22c55e;
+  --ring: #10b981;
   --destructive: #ef4444;
   --destructive-foreground: #fafafa;
-  --warning: #eab308;
-  --warning-foreground: #000000;
-  --success: #22c55e;
-  --success-foreground: #000000;
-  --radius: 0.5rem;
+  --warning: #f59e0b;
+  --warning-foreground: #09090b;
+  --success: #10b981;
+  --success-foreground: #09090b;
 }
 
 @theme inline {
@@ -56,6 +79,7 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 * {
