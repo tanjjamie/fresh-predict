@@ -31,38 +31,38 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-72 bg-card border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-screen w-72 bg-white border-r border-slate-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-border">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center">
-                <LeafIcon className="w-5 h-5 text-primary-foreground" />
+              <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center">
+                <LeafIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-lg text-foreground">FreshPredict</h1>
-                <p className="text-xs text-muted-foreground">AI Inventory</p>
+                <h1 className="font-bold text-lg text-slate-900">FreshPredict</h1>
+                <p className="text-xs text-slate-500">AI Inventory</p>
               </div>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-2 rounded-lg hover:bg-muted lg:hidden"
+              className="p-2 rounded-lg hover:bg-slate-100 lg:hidden"
             >
-              <XIcon className="w-5 h-5 text-muted-foreground" />
+              <XIcon className="w-5 h-5 text-slate-500" />
             </button>
           </div>
 
@@ -76,8 +76,8 @@ export default function DashboardLayout({
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-emerald-600 text-white"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   <item.icon className="w-5 h-5" />
@@ -88,14 +88,14 @@ export default function DashboardLayout({
           </nav>
 
           {/* Bottom section */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-slate-200">
             {/* ESG Compliance Badge */}
-            <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 mb-4">
+            <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 mb-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-                <span className="text-xs font-semibold text-primary">2026 ESG Compliant</span>
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                <span className="text-xs font-semibold text-emerald-700">2026 ESG Compliant</span>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-600">
                 Meeting Malaysian sustainability standards
               </p>
             </div>
@@ -103,7 +103,7 @@ export default function DashboardLayout({
             {/* Settings Link */}
             <Link
               href="/dashboard/settings"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
             >
               <SettingsIcon className="w-5 h-5" />
               <span>Settings</span>
@@ -115,33 +115,33 @@ export default function DashboardLayout({
       {/* Main content area */}
       <div className="lg:pl-72">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-md border-b border-border">
+        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200">
           <div className="flex items-center justify-between h-full px-6">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-lg hover:bg-muted lg:hidden"
+              className="p-2 rounded-lg hover:bg-slate-100 lg:hidden"
             >
-              <MenuIcon className="w-5 h-5 text-muted-foreground" />
+              <MenuIcon className="w-5 h-5 text-slate-500" />
             </button>
 
             <div className="hidden lg:block">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500">
                 Welcome back to your dashboard
               </p>
             </div>
 
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Last sync:</span>
-                <span className="font-medium text-foreground">
+                <span className="text-slate-500">Last sync:</span>
+                <span className="font-medium text-slate-900">
                   {new Date().toLocaleTimeString("en-MY", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
                 </span>
               </div>
-              <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-sm font-semibold text-primary">JT</span>
+              <div className="w-9 h-9 bg-emerald-100 rounded-full flex items-center justify-center">
+                <span className="text-sm font-semibold text-emerald-700">JT</span>
               </div>
             </div>
           </div>
