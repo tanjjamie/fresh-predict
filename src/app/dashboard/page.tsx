@@ -1,380 +1,284 @@
 "use client";
 
-import {
-  BoxIcon,
-  AlertTriangleIcon,
-  TrendingUpIcon,
-  LeafIcon,
-  ClockIcon,
-  TagIcon,
-  HeartIcon,
-  RefreshIcon,
-} from "../components/icons";
-
-// Mock data - in production this would come from your API
-const dashboardStats = {
-  totalProducts: 156,
-  lowStockCount: 12,
-  expiryRiskCount: 8,
-  totalValue: 45230,
-};
+// Mock data
+const stats = [
+  { label: "Total Products", value: "156", change: "+12", changeType: "positive" },
+  { label: "Low Stock", value: "12", change: "3 critical", changeType: "warning" },
+  { label: "Expiring Soon", value: "8", change: "2 urgent", changeType: "negative" },
+  { label: "Inventory Value", value: "RM 45,230", change: "+8.2%", changeType: "positive" },
+];
 
 const expiringItems = [
-  { id: 1, name: "Fresh Chicken Breast", daysLeft: 2, quantity: 25, unit: "kg", action: "discount" },
-  { id: 2, name: "Whole Milk", daysLeft: 3, quantity: 40, unit: "L", action: "donate" },
-  { id: 3, name: "Mixed Vegetables", daysLeft: 1, quantity: 15, unit: "kg", action: "urgent" },
-  { id: 4, name: "Yogurt Assorted", daysLeft: 4, quantity: 30, unit: "pcs", action: "monitor" },
+  { name: "Fresh Chicken Breast", days: 2, qty: "25 kg", status: "warning" },
+  { name: "Whole Milk", days: 3, qty: "40 L", status: "warning" },
+  { name: "Mixed Vegetables", days: 1, qty: "15 kg", status: "critical" },
+  { name: "Yogurt Assorted", days: 4, qty: "30 pcs", status: "normal" },
 ];
 
 const forecastData = [
-  { day: "Mon", demand: 65, predicted: 70 },
-  { day: "Tue", demand: 80, predicted: 75 },
-  { day: "Wed", demand: 72, predicted: 78 },
-  { day: "Thu", demand: 90, predicted: 85 },
-  { day: "Fri", demand: 110, predicted: 105 },
-  { day: "Sat", demand: 130, predicted: 125 },
-  { day: "Sun", demand: 95, predicted: 100 },
+  { day: "Mon", actual: 65, predicted: 70 },
+  { day: "Tue", actual: 80, predicted: 75 },
+  { day: "Wed", actual: 72, predicted: 78 },
+  { day: "Thu", actual: 90, predicted: 85 },
+  { day: "Fri", actual: 110, predicted: 105 },
+  { day: "Sat", actual: 130, predicted: 125 },
+  { day: "Sun", actual: 95, predicted: 100 },
 ];
 
-const esgMetrics = {
-  wasteReduction: 38,
-  sustainabilityScore: 87,
-  carbonFootprint: -15,
-  compliance: "On Track",
-};
-
 export default function DashboardPage() {
+  const maxValue = 130;
+
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-slate-500">
-            AI-powered inventory overview for your store
+          <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
+          <p className="text-zinc-500 text-sm mt-1">
+            Real-time inventory insights for your store
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors">
-          <RefreshIcon className="w-4 h-4" />
-          Sync Data
-        </button>
+        <div className="flex items-center gap-3">
+          <select className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
+            <option>Last 7 days</option>
+            <option>Last 30 days</option>
+            <option>Last 90 days</option>
+          </select>
+          <button className="bg-green-500 hover:bg-green-400 text-black font-medium px-4 py-2 rounded-lg text-sm transition-colors">
+            Sync Data
+          </button>
+        </div>
       </div>
 
-      {/* Festival Alert Banner */}
-      <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-lg">🌙</span>
+      {/* Alert Banner */}
+      <div className="bg-gradient-to-r from-amber-500/10 to-amber-500/5 border border-amber-500/20 rounded-lg p-4">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-slate-900">Hari Raya Preparation</h3>
-            <p className="text-sm text-slate-600 mt-1">
-              Expected +45% demand increase in 2 weeks. Stock up on poultry, cooking oil, and rendang ingredients.
-            </p>
+            <p className="text-sm font-medium text-white">Hari Raya Preparation Alert</p>
+            <p className="text-sm text-zinc-400">Expected +45% demand increase in 2 weeks. Stock up on poultry and cooking oil.</p>
           </div>
-          <button className="text-sm font-medium text-amber-700 hover:text-amber-800 hover:underline">
-            View Recommendations
+          <button className="text-amber-500 hover:text-amber-400 text-sm font-medium transition-colors">
+            View Details →
           </button>
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Total Products"
-          value={dashboardStats.totalProducts}
-          icon={BoxIcon}
-          variant="default"
-        />
-        <StatCard
-          label="Low Stock"
-          value={dashboardStats.lowStockCount}
-          icon={AlertTriangleIcon}
-          variant="warning"
-          subtext="Needs attention"
-        />
-        <StatCard
-          label="Expiry Risk"
-          value={dashboardStats.expiryRiskCount}
-          icon={ClockIcon}
-          variant="danger"
-          subtext="Action required"
-        />
-        <StatCard
-          label="Inventory Value"
-          value={`RM ${dashboardStats.totalValue.toLocaleString()}`}
-          icon={TagIcon}
-          variant="success"
-        />
+        {stats.map((stat) => (
+          <div
+            key={stat.label}
+            className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 hover:border-zinc-700 transition-colors"
+          >
+            <p className="text-zinc-500 text-sm">{stat.label}</p>
+            <p className="text-2xl font-semibold mt-2 tracking-tight">{stat.value}</p>
+            <p className={`text-sm mt-2 ${
+              stat.changeType === "positive" ? "text-green-500" :
+              stat.changeType === "warning" ? "text-amber-500" :
+              stat.changeType === "negative" ? "text-red-500" : "text-zinc-500"
+            }`}>
+              {stat.change}
+            </p>
+          </div>
+        ))}
       </div>
 
-      {/* Main Content Grid */}
+      {/* Main Grid */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Expiring Items */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg">
+          <div className="flex items-center justify-between p-5 border-b border-zinc-800">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-                <ClockIcon className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">Expiring Soon</h3>
-                <p className="text-sm text-slate-500">Items needing attention</p>
-              </div>
+              <h2 className="font-medium">Expiring Items</h2>
+              <span className="bg-red-500/10 text-red-500 text-xs font-medium px-2 py-0.5 rounded-full">
+                {expiringItems.length} items
+              </span>
             </div>
-            <span className="text-xs font-medium px-3 py-1 bg-red-100 text-red-700 rounded-full">
-              {expiringItems.length} items
-            </span>
+            <button className="text-zinc-400 hover:text-white text-sm transition-colors">
+              View all →
+            </button>
           </div>
-
-          <div className="space-y-3">
-            {expiringItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
-              >
+          <div className="divide-y divide-zinc-800">
+            {expiringItems.map((item, i) => (
+              <div key={i} className="flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      item.daysLeft <= 1
-                        ? "bg-red-500"
-                        : item.daysLeft <= 2
-                        ? "bg-amber-500"
-                        : "bg-slate-400"
-                    }`}
-                  />
+                  <div className={`w-2 h-2 rounded-full ${
+                    item.status === "critical" ? "bg-red-500" :
+                    item.status === "warning" ? "bg-amber-500" : "bg-zinc-500"
+                  }`} />
                   <div>
-                    <p className="font-medium text-slate-900 text-sm">{item.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {item.quantity} {item.unit} - {item.daysLeft}d left
-                    </p>
+                    <p className="text-sm font-medium">{item.name}</p>
+                    <p className="text-xs text-zinc-500">{item.qty}</p>
                   </div>
                 </div>
-                <ActionButton action={item.action} />
+                <div className="flex items-center gap-4">
+                  <span className={`text-sm ${
+                    item.days <= 1 ? "text-red-500" :
+                    item.days <= 2 ? "text-amber-500" : "text-zinc-400"
+                  }`}>
+                    {item.days}d left
+                  </span>
+                  <button className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    item.status === "critical" 
+                      ? "bg-red-500/10 text-red-500 hover:bg-red-500/20" 
+                      : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                  }`}>
+                    {item.status === "critical" ? "Urgent" : "Action"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
-
-          <button className="w-full mt-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors border border-slate-200 rounded-xl hover:bg-slate-50">
-            View All Expiring Items
-          </button>
         </div>
 
-        {/* AI Forecast */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+        {/* Demand Forecast */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg">
+          <div className="flex items-center justify-between p-5 border-b border-zinc-800">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-                <TrendingUpIcon className="w-5 h-5 text-teal-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">Demand Forecast</h3>
-                <p className="text-sm text-slate-500">7-day AI prediction</p>
-              </div>
+              <h2 className="font-medium">Demand Forecast</h2>
+              <span className="bg-green-500/10 text-green-500 text-xs font-medium px-2 py-0.5 rounded-full">
+                95% accuracy
+              </span>
             </div>
-            <span className="text-xs font-medium px-3 py-1 bg-teal-100 text-teal-700 rounded-full">
-              Prophet AI
-            </span>
+            <div className="flex items-center gap-4 text-xs">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className="text-zinc-400">Actual</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-zinc-400">Predicted</span>
+              </span>
+            </div>
           </div>
-
-          {/* Simple Bar Chart */}
-          <div className="h-48 flex items-end gap-2 mb-4">
-            {forecastData.map((data, index) => (
-              <div key={index} className="flex-1 flex flex-col items-center gap-1">
-                <div className="w-full flex flex-col items-center gap-1">
-                  <div
-                    className="w-full bg-emerald-100 rounded-t"
-                    style={{ height: `${(data.predicted / 130) * 150}px` }}
-                  >
-                    <div
-                      className="w-full bg-emerald-500 rounded-t transition-all"
-                      style={{ height: `${(data.demand / data.predicted) * 100}%` }}
+          <div className="p-5">
+            {/* Chart */}
+            <div className="h-48 flex items-end gap-3">
+              {forecastData.map((data, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                  <div className="w-full flex items-end justify-center gap-1 h-40">
+                    <div 
+                      className="w-3 bg-blue-500 rounded-sm transition-all hover:bg-blue-400"
+                      style={{ height: `${(data.actual / maxValue) * 100}%` }}
+                    />
+                    <div 
+                      className="w-3 bg-green-500/30 rounded-sm border border-green-500/50"
+                      style={{ height: `${(data.predicted / maxValue) * 100}%` }}
                     />
                   </div>
+                  <span className="text-xs text-zinc-500">{data.day}</span>
                 </div>
-                <span className="text-xs text-slate-500">{data.day}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-center gap-6 text-xs text-slate-500">
-            <span className="flex items-center gap-2">
-              <span className="w-3 h-3 bg-emerald-500 rounded" />
-              Actual
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="w-3 h-3 bg-emerald-100 rounded" />
-              Predicted
-            </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Grid - ESG and Sustainability */}
+      {/* Bottom Grid */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* ESG Score Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-              <LeafIcon className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">ESG Score</h3>
-              <p className="text-sm text-slate-500">Sustainability rating</p>
-            </div>
+        {/* ESG Score */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-medium">ESG Score</h2>
+            <span className="text-green-500 text-xs font-medium">On Track</span>
           </div>
-
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-28 h-28 rounded-full border-4 border-emerald-200">
-              <div className="text-center">
-                <span className="text-3xl font-bold text-emerald-600">{esgMetrics.sustainabilityScore}</span>
-                <span className="text-sm text-slate-500">/100</span>
+          <div className="flex items-center justify-center mb-6">
+            <div className="relative w-32 h-32">
+              <svg className="w-32 h-32 -rotate-90" viewBox="0 0 36 36">
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="#27272a"
+                  strokeWidth="3"
+                />
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="#22c55e"
+                  strokeWidth="3"
+                  strokeDasharray="87, 100"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-bold">87</span>
+                <span className="text-xs text-zinc-500">/100</span>
               </div>
             </div>
           </div>
-
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">Compliance Status</span>
-              <span className="text-sm font-medium text-emerald-600">{esgMetrics.compliance}</span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-zinc-500">Waste Reduction</span>
+              <span className="text-green-500 font-medium">-38%</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">Carbon Footprint</span>
-              <span className="text-sm font-medium text-emerald-600">{esgMetrics.carbonFootprint}%</span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-zinc-500">Carbon Footprint</span>
+              <span className="text-green-500 font-medium">-15%</span>
             </div>
           </div>
         </div>
 
-        {/* Waste Reduction */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-              <RefreshIcon className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">Waste Reduction</h3>
-              <p className="text-sm text-slate-500">This month vs last</p>
-            </div>
+        {/* Savings */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-medium">Monthly Savings</h2>
+            <span className="text-green-500 text-xs font-medium">+23%</span>
           </div>
-
           <div className="text-center mb-6">
-            <span className="text-5xl font-bold text-green-600">{esgMetrics.wasteReduction}%</span>
-            <p className="text-sm text-slate-500 mt-2">Less food waste</p>
+            <p className="text-4xl font-bold text-green-500">RM 3,240</p>
+            <p className="text-zinc-500 text-sm mt-2">Saved from waste reduction</p>
           </div>
-
-          <div className="p-4 bg-green-50 rounded-xl border border-green-100">
-            <p className="text-sm text-slate-700">
-              <span className="font-semibold text-green-700">RM 3,240</span> saved from waste reduction
-            </p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-zinc-500">Discounted Sales</span>
+              <span className="font-medium">RM 1,820</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-zinc-500">Donations (Tax Credit)</span>
+              <span className="font-medium">RM 1,420</span>
+            </div>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-              <HeartIcon className="w-5 h-5 text-teal-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">Quick Actions</h3>
-              <p className="text-sm text-slate-500">AI recommendations</p>
-            </div>
-          </div>
-
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
+          <h2 className="font-medium mb-4">AI Recommendations</h2>
           <div className="space-y-3">
-            <button className="w-full p-4 bg-amber-50 border border-amber-100 rounded-xl text-left hover:bg-amber-100 transition-colors">
-              <p className="font-medium text-slate-900 text-sm">Apply 20% Discount</p>
-              <p className="text-xs text-slate-500 mt-1">3 items expiring in 2 days</p>
+            <button className="w-full p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-left hover:bg-amber-500/20 transition-colors group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white">Apply 20% Discount</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">3 items expiring in 2 days</p>
+                </div>
+                <span className="text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+              </div>
             </button>
-            <button className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-xl text-left hover:bg-emerald-100 transition-colors">
-              <p className="font-medium text-slate-900 text-sm">Arrange Donation</p>
-              <p className="text-xs text-slate-500 mt-1">5 items suitable for food bank</p>
+            <button className="w-full p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-left hover:bg-green-500/20 transition-colors group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white">Arrange Donation</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">5 items for food bank</p>
+                </div>
+                <span className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+              </div>
             </button>
-            <button className="w-full p-4 bg-teal-50 border border-teal-100 rounded-xl text-left hover:bg-teal-100 transition-colors">
-              <p className="font-medium text-slate-900 text-sm">Reorder Stock</p>
-              <p className="text-xs text-slate-500 mt-1">8 items below reorder point</p>
+            <button className="w-full p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-left hover:bg-blue-500/20 transition-colors group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white">Reorder Stock</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">8 items below threshold</p>
+                </div>
+                <span className="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+              </div>
             </button>
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-// Helper Components
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  variant,
-  subtext,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ComponentType<{ className?: string }>;
-  variant: "default" | "warning" | "danger" | "success";
-  subtext?: string;
-}) {
-  const variants = {
-    default: {
-      bg: "bg-white",
-      iconBg: "bg-slate-100",
-      iconColor: "text-slate-600",
-      subtextColor: "text-slate-500",
-    },
-    warning: {
-      bg: "bg-amber-50",
-      iconBg: "bg-amber-100",
-      iconColor: "text-amber-600",
-      subtextColor: "text-amber-600",
-    },
-    danger: {
-      bg: "bg-red-50",
-      iconBg: "bg-red-100",
-      iconColor: "text-red-600",
-      subtextColor: "text-red-600",
-    },
-    success: {
-      bg: "bg-emerald-50",
-      iconBg: "bg-emerald-100",
-      iconColor: "text-emerald-600",
-      subtextColor: "text-emerald-600",
-    },
-  };
-
-  const style = variants[variant];
-
-  return (
-    <div className={`p-5 ${style.bg} rounded-2xl border border-slate-200 shadow-sm`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className={`w-10 h-10 ${style.iconBg} rounded-xl flex items-center justify-center`}>
-          <Icon className={`w-5 h-5 ${style.iconColor}`} />
-        </div>
-        {subtext && (
-          <span className={`text-xs font-medium ${style.subtextColor}`}>{subtext}</span>
-        )}
-      </div>
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="text-2xl font-bold text-slate-900 mt-1">{value}</p>
-    </div>
-  );
-}
-
-function ActionButton({ action }: { action: string }) {
-  const actions = {
-    urgent: { label: "Urgent Sale", bg: "bg-red-600", text: "text-white" },
-    discount: { label: "Apply Discount", bg: "bg-amber-500", text: "text-white" },
-    donate: { label: "Donate", bg: "bg-emerald-600", text: "text-white" },
-    monitor: { label: "Monitor", bg: "bg-slate-200", text: "text-slate-700" },
-  };
-
-  const style = actions[action as keyof typeof actions] || actions.monitor;
-
-  return (
-    <button
-      className={`px-3 py-1.5 ${style.bg} ${style.text} rounded-lg text-xs font-medium hover:opacity-90 transition-opacity`}
-    >
-      {style.label}
-    </button>
   );
 }

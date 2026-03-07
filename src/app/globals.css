@@ -1,27 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafbfc;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --primary: #059669;
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #475569;
-  --muted: #f8fafc;
-  --muted-foreground: #64748b;
-  --accent: #0d9488;
-  --accent-foreground: #ffffff;
-  --border: #e2e8f0;
-  --ring: #059669;
+  --background: #000000;
+  --foreground: #fafafa;
+  --card: #0a0a0a;
+  --card-foreground: #fafafa;
+  --primary: #22c55e;
+  --primary-foreground: #000000;
+  --secondary: #171717;
+  --secondary-foreground: #a1a1aa;
+  --muted: #171717;
+  --muted-foreground: #71717a;
+  --accent: #22c55e;
+  --accent-foreground: #000000;
+  --border: #27272a;
+  --ring: #22c55e;
   --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --warning: #f59e0b;
-  --warning-foreground: #ffffff;
-  --success: #10b981;
-  --success-foreground: #ffffff;
-  --radius: 0.75rem;
+  --destructive-foreground: #fafafa;
+  --warning: #eab308;
+  --warning-foreground: #000000;
+  --success: #22c55e;
+  --success-foreground: #000000;
+  --radius: 0.5rem;
 }
 
 @theme inline {
@@ -50,28 +50,12 @@
   --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #030712;
-    --foreground: #f8fafc;
-    --card: #0f172a;
-    --card-foreground: #f8fafc;
-    --primary: #10b981;
-    --primary-foreground: #030712;
-    --secondary: #1e293b;
-    --secondary-foreground: #cbd5e1;
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
-    --accent: #14b8a6;
-    --accent-foreground: #030712;
-    --border: #334155;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
