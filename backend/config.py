@@ -162,7 +162,7 @@ def get_malaysian_festivals(year: int = None) -> List[dict]:
             festivals.append({
                 "name": name,
                 "date": f"{year}-{dates[year_str]}",
-                "impact_categories": categories,
+                "affected_categories": categories,
                 "demand_multiplier": multiplier
             })
     

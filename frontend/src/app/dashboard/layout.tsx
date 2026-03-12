@@ -1,9 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "../components/theme-toggle";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+interface Alert {
+  id: string;
+  product_name: string;
+  alert_type: string;
+  severity: string;
+  message: string;
+  days_until_expiry?: number;
+  days_until_event?: number;
+}
 
 const navigation = [
   { name: "Overview", href: "/dashboard", icon: "grid" },
@@ -50,6 +62,47 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [alertCount, setAlertCount] = useState(0);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchAlerts();
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const fetchAlerts = async () => {
+    try {
+      const [prepRes, sustRes] = await Promise.all([
+        fetch(`${API_URL}/alerts/preparation`),
+        fetch(`${API_URL}/alerts/sustainability`)
+      ]);
+      const prepAlerts = prepRes.ok ? await prepRes.json() : [];
+      const sustAlerts = sustRes.ok ? await sustRes.json() : [];
+      const combined = [...prepAlerts, ...sustAlerts].slice(0, 5);
+      setAlerts(combined);
+      setAlertCount(prepAlerts.length + sustAlerts.length);
+    } catch (error) {
+      console.error("Error fetching alerts:", error);
+    }
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "high": return "text-red-500 bg-red-500/10";
+      case "medium": return "text-amber-500 bg-amber-500/10";
+      default: return "text-blue-500 bg-blue-500/10";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -90,12 +143,79 @@ export default function DashboardLayout({
           {/* Right side */}
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
-            <button className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-              </svg>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full" />
-            </button>
+            
+            {/* Notification Bell with Dropdown */}
+            <div className="relative" ref={notificationRef}>
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                </svg>
+                {alertCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center px-1">
+                    {alertCount > 9 ? "9+" : alertCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-50">
+                  <div className="p-3 border-b border-border flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Notifications</h3>
+                    <span className="text-xs text-muted-foreground">{alertCount} active</span>
+                  </div>
+                  
+                  {alerts.length === 0 ? (
+                    <div className="p-4 text-center text-muted-foreground text-sm">
+                      No active alerts
+                    </div>
+                  ) : (
+                    <div className="max-h-80 overflow-y-auto">
+                      {alerts.map((alert) => (
+                        <div 
+                          key={alert.id}
+                          className="p-3 border-b border-border last:border-0 hover:bg-secondary/50 cursor-pointer transition-colors"
+                          onClick={() => {
+                            setShowNotifications(false);
+                            router.push("/dashboard/alerts");
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                              alert.severity === "high" ? "bg-red-500" :
+                              alert.severity === "medium" ? "bg-amber-500" : "bg-blue-500"
+                            }`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{alert.product_name}</p>
+                              <p className="text-xs text-muted-foreground line-clamp-2">{alert.message}</p>
+                              <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full ${getSeverityColor(alert.severity)}`}>
+                                {alert.alert_type.replace(/_/g, " ")}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="p-2 border-t border-border">
+                    <button 
+                      onClick={() => {
+                        setShowNotifications(false);
+                        router.push("/dashboard/alerts");
+                      }}
+                      className="w-full text-center text-sm text-emerald-500 hover:text-emerald-400 font-medium py-2 transition-colors"
+                    >
+                      View All Alerts
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="h-6 w-px bg-border mx-1" />
             <button className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-secondary transition-colors">
               <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-semibold text-white">

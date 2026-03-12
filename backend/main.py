@@ -21,6 +21,24 @@ from config import (
     get_malaysian_festivals,
 )
 
+# ============== DEMO MODE ==============
+# Demo mode allows simulating different dates for showcasing scenarios
+
+DEMO_MODE = {
+    "enabled": False,
+    "simulated_date": None,  # datetime object when demo mode is active
+}
+
+def get_current_datetime() -> datetime:
+    """Get current datetime - uses simulated date if demo mode is enabled."""
+    if DEMO_MODE["enabled"] and DEMO_MODE["simulated_date"]:
+        return DEMO_MODE["simulated_date"]
+    return datetime.now()
+
+def get_current_date():
+    """Get current date - uses simulated date if demo mode is enabled."""
+    return get_current_datetime().date()
+
 # Prophet forecasting module
 try:
     from forecasting import generate_forecast as prophet_forecast, initialize_models, get_available_products
@@ -128,13 +146,23 @@ class MarkSoldRequest(BaseModel):
     quantity_kg: float
     cost_rm: float
 
+class MarkDonatedRequest(BaseModel):
+    alert_id: str
+    product_id: str
+    quantity_kg: float
+    cost_rm: float
+    recipient: Optional[str] = None  # Food bank name
+
 # ============== WASTE TRACKING ==============
-# Track items marked as sold to prevent waste
+# Track items marked as sold/donated to prevent waste
 WASTE_TRACKER = {
     "items_sold": [],  # List of {product_id, quantity_kg, cost_rm, timestamp}
+    "items_donated": [],  # List of {product_id, quantity_kg, cost_rm, timestamp, recipient}
     "total_waste_saved_kg": ESGConfig.INITIAL_WASTE_SAVED_KG,
     "total_items_rescued": ESGConfig.INITIAL_ITEMS_RESCUED,
     "total_cost_saved_rm": ESGConfig.INITIAL_COST_SAVED_RM,
+    "total_donated_kg": 0.0,
+    "total_donated_items": 0,
 }
 
 # ============== SAMPLE DATA (Malaysian Context) ==============
@@ -143,7 +171,7 @@ WASTE_TRACKER = {
 def get_festivals_for_year(year: int = None) -> List[dict]:
     """Get Malaysian festivals from config."""
     if year is None:
-        year = datetime.now().year
+        year = get_current_datetime().year
     return get_malaysian_festivals(year)
 
 MALAYSIAN_FESTIVALS = get_festivals_for_year()
@@ -152,7 +180,7 @@ MALAYSIAN_FESTIVALS = get_festivals_for_year()
 PRODUCT_DEFINITIONS = PRODUCT_CATALOG
 def generate_dynamic_inventory() -> List[dict]:
     """Generate inventory with expiry dates relative to today"""
-    today = datetime.now().date()
+    today = get_current_date()
     inventory = []
     
     # Use demo stock scenarios from config
@@ -184,7 +212,7 @@ ESG_MONTHLY_TREND = ESG_HISTORICAL_TREND
 
 def get_days_until_expiry(expiry_date: str) -> int:
     """Calculate days until expiry from today"""
-    today = datetime.now().date()
+    today = get_current_date()
     expiry = datetime.strptime(expiry_date, "%Y-%m-%d").date()
     return (expiry - today).days
 
@@ -193,7 +221,7 @@ def check_upcoming_festival(days_ahead: int = None) -> Optional[dict]:
     if days_ahead is None:
         days_ahead = ForecastConfig.DEFAULT_FORECAST_DAYS
     
-    today = datetime.now().date()
+    today = get_current_date()
     current_year = today.year
     
     # Check festivals for current and next year
@@ -208,7 +236,7 @@ def check_upcoming_festival(days_ahead: int = None) -> Optional[dict]:
 
 def is_payday_period() -> bool:
     """Check if current date is in payday period"""
-    day = datetime.now().day
+    day = get_current_datetime().day
     return any(start <= day <= end for start, end in PAYDAY_PERIODS)
 
 def generate_forecast(product: dict, days: int = None) -> dict:
@@ -252,7 +280,7 @@ def generate_fallback_forecast(product: dict, days: int = None) -> dict:
     festive_multiplier = 1.0
     festive_impact = None
     
-    if upcoming_festival and product["category"] in upcoming_festival["impact_categories"]:
+    if upcoming_festival and product["category"] in upcoming_festival["affected_categories"]:
         festive_multiplier = upcoming_festival["demand_multiplier"]
         festive_impact = f"{upcoming_festival['name']} ({upcoming_festival['days_until']} days)"
     
@@ -263,7 +291,7 @@ def generate_fallback_forecast(product: dict, days: int = None) -> dict:
     conf_lower = []
     conf_upper = []
     
-    today = datetime.now()
+    today = get_current_datetime()
     for i in range(days):
         date = today + timedelta(days=i)
         dates.append(date.strftime("%Y-%m-%d"))
@@ -325,7 +353,7 @@ def generate_preparation_alerts() -> List[dict]:
             shortage = total_predicted - product["current_stock"]
             
             alerts.append({
-                "id": f"PA-{product['id']}-{datetime.now().strftime('%Y%m%d')}",
+                "id": f"PA-{product['id']}-{get_current_datetime().strftime('%Y%m%d')}",
                 "product_id": product["id"],
                 "product_name": product["name"],
                 "alert_type": "demand_spike" if not upcoming_festival else "festive_surge",
@@ -334,7 +362,7 @@ def generate_preparation_alerts() -> List[dict]:
                 "recommended_action": f"Order additional {shortage:.0f} {product['unit']} from {product['supplier']}",
                 "predicted_demand_increase": ((total_predicted / product["current_stock"]) - 1) * 100 if product["current_stock"] > 0 else 100,
                 "days_until_event": upcoming_festival["days_until"] if upcoming_festival else ForecastConfig.DEFAULT_FORECAST_DAYS // 2,
-                "created_at": datetime.now().isoformat()
+                "created_at": get_current_datetime().isoformat()
             })
         
         # Check for stock-out risk (using config threshold)
@@ -349,7 +377,7 @@ def generate_preparation_alerts() -> List[dict]:
                 "recommended_action": f"Immediate reorder required from {product['supplier']}",
                 "predicted_demand_increase": 0,
                 "days_until_event": PricingConfig.IMMEDIATE_REORDER_DAYS,
-                "created_at": datetime.now().isoformat()
+                "created_at": get_current_datetime().isoformat()
             })
     
     return alerts
@@ -359,6 +387,10 @@ def generate_sustainability_alerts() -> List[dict]:
     alerts = []
     
     for product in SAMPLE_INVENTORY:
+        # Skip products with no stock
+        if product["current_stock"] <= 0:
+            continue
+            
         days_until_expiry = get_days_until_expiry(product["expiry_date"])
         
         # Expiry risk alert (using config thresholds)
@@ -377,7 +409,7 @@ def generate_sustainability_alerts() -> List[dict]:
                 action = f"Consider promotional pricing or bundle deals"
             
             alerts.append({
-                "id": f"SA-{product['id']}-{datetime.now().strftime('%Y%m%d')}",
+                "id": f"SA-{product['id']}-{get_current_datetime().strftime('%Y%m%d')}",
                 "product_id": product["id"],
                 "product_name": product["name"],
                 "alert_type": "expiry_risk",
@@ -387,7 +419,7 @@ def generate_sustainability_alerts() -> List[dict]:
                 "days_until_expiry": days_until_expiry,
                 "potential_waste_kg": round(waste_risk_kg, 2),
                 "potential_loss_rm": round(potential_loss, 2),
-                "created_at": datetime.now().isoformat()
+                "created_at": get_current_datetime().isoformat()
             })
         
         # Overstock detection (using config thresholds)
@@ -406,7 +438,7 @@ def generate_sustainability_alerts() -> List[dict]:
                 "days_until_expiry": days_until_expiry,
                 "potential_waste_kg": round(waste_risk_kg, 2),
                 "potential_loss_rm": round(waste_risk_kg * product["cost_per_unit"], 2),
-                "created_at": datetime.now().isoformat()
+                "created_at": get_current_datetime().isoformat()
             })
     
     return alerts
@@ -454,7 +486,7 @@ def get_ai_insight(product_id: str, quantity: int) -> dict:
     festival_warning = None
     demand_multiplier = 1.0
     
-    if upcoming_festival and product_def["category"] in upcoming_festival["impact_categories"]:
+    if upcoming_festival and product_def["category"] in upcoming_festival["affected_categories"]:
         festival_warning = f"{upcoming_festival['name']} in {upcoming_festival['days_until']} days"
         demand_multiplier = upcoming_festival["demand_multiplier"]
     
@@ -585,7 +617,7 @@ def get_products():
         "cost_per_unit": p["cost_per_unit"],
         "shelf_life_days": p["shelf_life_days"],
         "default_supplier": p["default_supplier"],
-        "suggested_expiry": (datetime.now().date() + timedelta(days=p["shelf_life_days"])).strftime("%Y-%m-%d")
+        "suggested_expiry": (get_current_date() + timedelta(days=p["shelf_life_days"])).strftime("%Y-%m-%d")
     } for p in PRODUCT_DEFINITIONS]
 
 @app.get("/suppliers/{category}")
@@ -632,15 +664,30 @@ def get_sustainability_alerts(severity: Optional[str] = None):
 
 @app.post("/alerts/mark-sold")
 def mark_alert_as_sold(request: MarkSoldRequest):
-    """Mark an expiry risk item as sold - updates ESG metrics"""
-    from datetime import datetime
+    """Mark an expiry risk item as sold - updates ESG metrics and inventory"""
+    global SAMPLE_INVENTORY
+    
+    # Find the product in inventory
+    product = next((p for p in SAMPLE_INVENTORY if p["id"] == request.product_id), None)
+    if not product:
+        return {"success": False, "message": "Product not found"}
+    
+    # Calculate units to subtract from stock
+    if product["unit"] == "kg":
+        units_sold = request.quantity_kg
+    else:
+        # Reverse the weight conversion
+        units_sold = request.quantity_kg / ESGConfig.NON_KG_UNIT_WEIGHT
+    
+    # Update inventory stock
+    product["current_stock"] = max(0, product["current_stock"] - units_sold)
     
     # Record the sale
     WASTE_TRACKER["items_sold"].append({
         "product_id": request.product_id,
         "quantity_kg": request.quantity_kg,
         "cost_rm": request.cost_rm,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": get_current_datetime().isoformat(),
         "alert_id": request.alert_id
     })
     
@@ -660,7 +707,62 @@ def mark_alert_as_sold(request: MarkSoldRequest):
             "methane_offset_kg_co2e": round(new_methane_offset, 2),
             "items_rescued": WASTE_TRACKER["total_items_rescued"],
             "cost_saved_rm": round(WASTE_TRACKER["total_cost_saved_rm"], 2)
-        }
+        },
+        "remaining_stock": round(product["current_stock"], 1)
+    }
+
+@app.post("/alerts/mark-donated")
+def mark_alert_as_donated(request: MarkDonatedRequest):
+    """Mark an expiry risk item as donated - updates ESG metrics and inventory"""
+    global SAMPLE_INVENTORY
+    
+    # Find the product in inventory
+    product = next((p for p in SAMPLE_INVENTORY if p["id"] == request.product_id), None)
+    if not product:
+        return {"success": False, "message": "Product not found"}
+    
+    # Calculate units to subtract from stock
+    if product["unit"] == "kg":
+        units_donated = request.quantity_kg
+    else:
+        # Reverse the weight conversion
+        units_donated = request.quantity_kg / ESGConfig.NON_KG_UNIT_WEIGHT
+    
+    # Update inventory stock
+    product["current_stock"] = max(0, product["current_stock"] - units_donated)
+    
+    # Record the donation
+    WASTE_TRACKER["items_donated"].append({
+        "product_id": request.product_id,
+        "quantity_kg": request.quantity_kg,
+        "cost_rm": request.cost_rm,
+        "timestamp": get_current_datetime().isoformat(),
+        "alert_id": request.alert_id,
+        "recipient": request.recipient or "Local Food Bank"
+    })
+    
+    # Update totals (donations count toward waste saved)
+    WASTE_TRACKER["total_waste_saved_kg"] += request.quantity_kg
+    WASTE_TRACKER["total_items_rescued"] += 1
+    WASTE_TRACKER["total_donated_kg"] += request.quantity_kg
+    WASTE_TRACKER["total_donated_items"] += 1
+    # Donations get tax benefit - record the value but don't add to cost_saved
+    # since it wasn't sold (could add tax credit calculation here)
+    
+    # Calculate new methane offset using config factor
+    new_methane_offset = WASTE_TRACKER["total_waste_saved_kg"] * ESGConfig.METHANE_CONVERSION_FACTOR
+    
+    return {
+        "success": True,
+        "message": f"Donated {request.quantity_kg} kg to {request.recipient or 'Local Food Bank'} - thank you!",
+        "updated_metrics": {
+            "waste_saved_kg": round(WASTE_TRACKER["total_waste_saved_kg"], 1),
+            "methane_offset_kg_co2e": round(new_methane_offset, 2),
+            "items_rescued": WASTE_TRACKER["total_items_rescued"],
+            "items_donated": WASTE_TRACKER["total_donated_items"],
+            "donated_kg": round(WASTE_TRACKER["total_donated_kg"], 1)
+        },
+        "remaining_stock": round(product["current_stock"], 1)
     }
 
 @app.get("/esg", response_model=ESGMetrics)
@@ -688,7 +790,7 @@ def get_dashboard_summary():
 @app.get("/festivals")
 def get_upcoming_festivals():
     """Get upcoming Malaysian festivals with demand impact"""
-    today = datetime.now().date()
+    today = get_current_date()
     current_year = today.year
     
     # Get festivals for current and next year
@@ -702,6 +804,75 @@ def get_upcoming_festivals():
             upcoming.append({**festival, "days_until": days_until})
     
     return sorted(upcoming, key=lambda x: x["days_until"])
+
+
+@app.get("/paydays")
+def get_upcoming_paydays():
+    """Get upcoming payday periods with demand impact"""
+    today = get_current_datetime()
+    current_day = today.day
+    current_month = today.month
+    current_year = today.year
+    
+    paydays = []
+    
+    # Check current and next 2 months for payday periods
+    for month_offset in range(3):
+        if month_offset == 0:
+            check_month = current_month
+            check_year = current_year
+        else:
+            check_month = current_month + month_offset
+            check_year = current_year
+            if check_month > 12:
+                check_month -= 12
+                check_year += 1
+        
+        # Get last day of the month
+        if check_month == 12:
+            last_day = 31
+        else:
+            next_month = datetime(check_year, check_month + 1, 1)
+            last_day = (next_month - timedelta(days=1)).day
+        
+        for start_day, end_day in PAYDAY_PERIODS:
+            # Adjust end_day if it exceeds month length
+            actual_end = min(end_day, last_day)
+            
+            # Create date for start of payday period
+            try:
+                period_start = datetime(check_year, check_month, start_day).date()
+                period_end = datetime(check_year, check_month, actual_end).date()
+            except ValueError:
+                continue
+            
+            days_until_start = (period_start - today.date()).days
+            days_until_end = (period_end - today.date()).days
+            
+            # Include if period is upcoming or currently active
+            if days_until_end >= 0:
+                # Check if we're currently in this payday period
+                is_active = days_until_start <= 0 and days_until_end >= 0
+                
+                paydays.append({
+                    "name": "Payday Period" if start_day >= 25 else "Post-Payday Spending",
+                    "start_date": period_start.isoformat(),
+                    "end_date": period_end.isoformat(),
+                    "days_until": max(0, days_until_start),
+                    "is_active": is_active,
+                    "demand_multiplier": ForecastConfig.FALLBACK_PAYDAY_MULTIPLIER,
+                    "affected_categories": ["all"]
+                })
+    
+    # Sort by days_until and remove duplicates based on start_date
+    seen_dates = set()
+    unique_paydays = []
+    for p in sorted(paydays, key=lambda x: x["days_until"]):
+        if p["start_date"] not in seen_dates:
+            seen_dates.add(p["start_date"])
+            unique_paydays.append(p)
+    
+    return unique_paydays[:6]  # Return next 6 payday periods
 
 # Legacy endpoint for backwards compatibility
 @app.get("/predict/{product_name}")
@@ -768,3 +939,166 @@ async def startup_event():
             print("Prophet models initialized successfully")
         except Exception as e:
             print(f"Warning: Could not initialize Prophet models: {e}")
+
+
+# ============== DEMO MODE ENDPOINTS ==============
+
+class DemoDateRequest(BaseModel):
+    date: str  # Format: YYYY-MM-DD
+
+class DemoScenario(BaseModel):
+    scenario: str  # "pre_hari_raya", "pre_cny", "expiry_crisis", "normal", "payday"
+
+@app.get("/demo/status")
+def get_demo_status():
+    """Get current demo mode status"""
+    return {
+        "enabled": DEMO_MODE["enabled"],
+        "simulated_date": DEMO_MODE["simulated_date"].strftime("%Y-%m-%d") if DEMO_MODE["simulated_date"] else None,
+        "actual_date": datetime.now().strftime("%Y-%m-%d"),
+        "available_scenarios": [
+            {"id": "pre_hari_raya", "name": "7 Days Before Hari Raya", "date": "2026-03-13", "description": "Show festive demand surge alerts"},
+            {"id": "pre_cny", "name": "7 Days Before CNY", "date": "2026-02-10", "description": "Show Chinese New Year preparation"},
+            {"id": "expiry_crisis", "name": "Items Expiring Soon", "date": None, "description": "Regenerate data with items expiring in 1-2 days"},
+            {"id": "payday", "name": "Payday Period", "date": "2026-03-27", "description": "Show payday demand boost"},
+            {"id": "normal", "name": "Normal Day", "date": None, "description": "Reset to current date"}
+        ]
+    }
+
+@app.post("/demo/set-date")
+def set_demo_date(request: DemoDateRequest):
+    """Set a simulated date for demo purposes"""
+    global DEMO_MODE, SAMPLE_INVENTORY
+    
+    try:
+        simulated = datetime.strptime(request.date, "%Y-%m-%d")
+        DEMO_MODE["enabled"] = True
+        DEMO_MODE["simulated_date"] = simulated
+        
+        # Regenerate inventory with new date context
+        SAMPLE_INVENTORY = generate_dynamic_inventory()
+        
+        # Check for upcoming festivals
+        upcoming = check_upcoming_festival()
+        festival_info = f" ({upcoming['name']} in {upcoming['days_until']} days)" if upcoming else ""
+        
+        return {
+            "success": True,
+            "message": f"Demo mode enabled. Simulating date: {request.date}{festival_info}",
+            "simulated_date": request.date,
+            "upcoming_festival": upcoming
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid date format. Use YYYY-MM-DD. Error: {str(e)}")
+
+@app.post("/demo/scenario")
+def set_demo_scenario(request: DemoScenario):
+    """Set a predefined demo scenario"""
+    global DEMO_MODE, SAMPLE_INVENTORY, WASTE_TRACKER
+    
+    scenarios = {
+        "pre_hari_raya": {"date": "2026-03-13", "description": "7 days before Hari Raya Aidilfitri"},
+        "pre_cny": {"date": "2026-02-10", "description": "7 days before Chinese New Year"},
+        "payday": {"date": "2026-03-27", "description": "Payday period (end of month)"},
+        "deepavali": {"date": "2026-11-01", "description": "7 days before Deepavali"},
+        "normal": {"date": None, "description": "Reset to actual date"},
+    }
+    
+    if request.scenario not in scenarios and request.scenario != "expiry_crisis":
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unknown scenario. Available: {', '.join(list(scenarios.keys()) + ['expiry_crisis'])}"
+        )
+    
+    if request.scenario == "normal":
+        # Reset to actual date
+        DEMO_MODE["enabled"] = False
+        DEMO_MODE["simulated_date"] = None
+        SAMPLE_INVENTORY = generate_dynamic_inventory()
+        return {
+            "success": True,
+            "message": "Demo mode disabled. Using actual date.",
+            "simulated_date": None
+        }
+    
+    if request.scenario == "expiry_crisis":
+        # Keep current date but regenerate inventory with items about to expire
+        DEMO_MODE["enabled"] = False
+        DEMO_MODE["simulated_date"] = None
+        
+        # Generate special inventory with critical expiry dates
+        today = get_current_date()
+        inventory = []
+        for i, scenario in enumerate(DEMO_STOCK_SCENARIOS):
+            product_def = next((p for p in PRODUCT_DEFINITIONS if p["id"] == scenario["id"]), None)
+            if product_def:
+                # Make 60% of items expire in 1-3 days
+                if i % 5 < 3:
+                    expiry_offset = random.randint(1, 3)
+                else:
+                    expiry_offset = scenario["expiry_offset"]
+                    
+                expiry_date = today + timedelta(days=expiry_offset)
+                inventory.append({
+                    "id": product_def["id"],
+                    "name": product_def["name"],
+                    "category": product_def["category"],
+                    "current_stock": scenario["stock"],
+                    "unit": product_def["unit"],
+                    "cost_per_unit": product_def["cost_per_unit"],
+                    "expiry_date": expiry_date.strftime("%Y-%m-%d"),
+                    "reorder_point": product_def["reorder_point"],
+                    "supplier": product_def["default_supplier"],
+                })
+        
+        SAMPLE_INVENTORY = inventory
+        return {
+            "success": True,
+            "message": "Expiry crisis scenario loaded. Multiple items expiring soon!",
+            "simulated_date": None,
+            "expiring_soon_count": sum(1 for item in SAMPLE_INVENTORY if get_days_until_expiry(item["expiry_date"]) <= 3)
+        }
+    
+    # Set predefined date scenario
+    scenario_config = scenarios[request.scenario]
+    simulated = datetime.strptime(scenario_config["date"], "%Y-%m-%d")
+    DEMO_MODE["enabled"] = True
+    DEMO_MODE["simulated_date"] = simulated
+    
+    # Regenerate inventory
+    SAMPLE_INVENTORY = generate_dynamic_inventory()
+    
+    upcoming = check_upcoming_festival()
+    
+    return {
+        "success": True,
+        "message": f"Scenario '{request.scenario}' loaded: {scenario_config['description']}",
+        "simulated_date": scenario_config["date"],
+        "upcoming_festival": upcoming
+    }
+
+@app.post("/demo/reset")
+def reset_demo():
+    """Reset demo mode and regenerate all data"""
+    global DEMO_MODE, SAMPLE_INVENTORY, WASTE_TRACKER
+    
+    # Reset demo mode
+    DEMO_MODE["enabled"] = False
+    DEMO_MODE["simulated_date"] = None
+    
+    # Regenerate inventory
+    SAMPLE_INVENTORY = generate_dynamic_inventory()
+    
+    # Reset waste tracker to initial values
+    WASTE_TRACKER["items_sold"] = []
+    WASTE_TRACKER["total_waste_saved_kg"] = ESGConfig.INITIAL_WASTE_SAVED_KG
+    WASTE_TRACKER["total_items_rescued"] = ESGConfig.INITIAL_ITEMS_RESCUED
+    WASTE_TRACKER["total_cost_saved_rm"] = ESGConfig.INITIAL_COST_SAVED_RM
+    
+    return {
+        "success": True,
+        "message": "Demo reset complete. All data regenerated to initial state.",
+        "current_date": datetime.now().strftime("%Y-%m-%d"),
+        "inventory_count": len(SAMPLE_INVENTORY),
+        "esg_metrics": calculate_esg_metrics()
+    }
